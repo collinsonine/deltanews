@@ -1,7 +1,8 @@
 import 'package:bootstrap_icons/bootstrap_icons.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class AccountWidget extends StatefulWidget {
   const AccountWidget({super.key});
@@ -11,19 +12,7 @@ class AccountWidget extends StatefulWidget {
 }
 
 class _AccountWidgetState extends State<AccountWidget> {
-  XFile? image;
-
-  final ImagePicker picker = ImagePicker();
-
-  //we can upload image from camera or from gallery based on parameter
-  Future getImage(ImageSource media) async {
-    var img = await picker.pickImage(source: media);
-
-    setState(() {
-      image = img;
-    });
-  }
-
+  File? imageFile;
   //show popup dialog
   void myAlert() {
     showDialog(
@@ -40,10 +29,7 @@ class _AccountWidgetState extends State<AccountWidget> {
                 children: [
                   ElevatedButton(
                     //if user click this button, user can upload image from gallery
-                    onPressed: () {
-                      Navigator.pop(context);
-                      getImage(ImageSource.gallery);
-                    },
+                    onPressed: () {},
                     child: Row(
                       children: const [
                         Icon(Icons.image),
@@ -53,10 +39,7 @@ class _AccountWidgetState extends State<AccountWidget> {
                   ),
                   ElevatedButton(
                     //if user click this button. user can upload image from camera
-                    onPressed: () {
-                      Navigator.pop(context);
-                      getImage(ImageSource.camera);
-                    },
+                    onPressed: () {},
                     child: Row(
                       children: const [
                         Icon(Icons.camera),
@@ -69,6 +52,31 @@ class _AccountWidgetState extends State<AccountWidget> {
             ),
           );
         });
+  }
+
+  void _getImageFromCamera() async {
+    XFile? pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.camera);
+    _cropImage(pickedFile!.path);
+    Navigator.pop(context);
+  }
+
+  void _getImageFromGalery() async {
+    XFile? pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    _cropImage(pickedFile!.path);
+    Navigator.pop(context);
+  }
+
+  void _cropImage(filePath) async {
+    CroppedFile? croppedImage = await ImageCropper()
+        .cropImage(sourcePath: filePath, maxHeight: 1080, maxWidth: 1080);
+
+    if (croppedImage != null) {
+      setState(() {
+        imageFile = File(croppedImage.path);
+      });
+    }
   }
 
   @override
@@ -112,16 +120,14 @@ class _AccountWidgetState extends State<AccountWidget> {
                                 leading: const Icon(Icons.photo),
                                 title: const Text('Galery'),
                                 onTap: () {
-                                  Navigator.pop(context);
-                                  getImage(ImageSource.gallery);
+                                  _getImageFromGalery();
                                 },
                               ),
                               ListTile(
                                 leading: const Icon(Icons.camera),
                                 title: const Text('Camera'),
                                 onTap: () {
-                                  Navigator.pop(context);
-                                  getImage(ImageSource.camera);
+                                  _getImageFromCamera();
                                 },
                               ),
                             ],
@@ -132,12 +138,9 @@ class _AccountWidgetState extends State<AccountWidget> {
                     height: 150,
                     width: 150,
                     decoration: BoxDecoration(
-                        border: Border.all(color: Colors.blue, width: 3),
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(80)),
-                        image: const DecorationImage(
-                            image: AssetImage('assets/images/placeholder.png'),
-                            fit: BoxFit.fitHeight)),
+                      border: Border.all(color: Colors.blue, width: 3),
+                      borderRadius: const BorderRadius.all(Radius.circular(80)),
+                    ),
                   ),
                 ),
               ],
